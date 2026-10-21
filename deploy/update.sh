@@ -2,7 +2,7 @@
 set -euo pipefail
 exec 9>/run/lock/podpivkovichi-update.lock
 flock -n 9 || exit 0
-export PATH=/opt/podpivkovichi/runtime/node/bin:/usr/bin:/bin
+export PATH=/opt/podpivkovichi/runtime/node/bin:/usr/sbin:/usr/bin:/sbin:/bin
 root=/opt/podpivkovichi
 build=/var/lib/podpivkovichi-build
 sha=$(curl --fail --silent --show-error --max-time 30 -H 'Accept: application/vnd.github+json' https://api.github.com/repos/segamong/podpivkovichi/commits/main | python3 -c 'import json,sys; print(json.load(sys.stdin)["sha"])')
