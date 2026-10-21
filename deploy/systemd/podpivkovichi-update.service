@@ -1,0 +1,10 @@
+[Unit]
+Description=Build tested Podpivkovichi release from GitHub main
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/podpivkovichi/update.sh
+TimeoutStartSec=1200
+Nice=15
+UMask=0022

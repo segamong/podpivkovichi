@@ -1,0 +1,11 @@
+[Unit]
+Description=Check GitHub main for Podpivkovichi updates
+
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=5min
+RandomizedDelaySec=20
+Persistent=true
+
+[Install]
+WantedBy=timers.target

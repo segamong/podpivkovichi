@@ -1,0 +1,6 @@
+[Unit]
+Description=Copy renewed IP certificate to Podpivkovichi only
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/podpivkovichi/sync-tls.sh

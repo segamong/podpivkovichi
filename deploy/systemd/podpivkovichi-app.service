@@ -1,0 +1,32 @@
+[Unit]
+Description=Podpivkovichi chat application
+After=network-online.target podpivkovichi-media.service
+
+[Service]
+User=podpivkovichi
+Group=podpivkovichi
+WorkingDirectory=/opt/podpivkovichi/current
+EnvironmentFile=/etc/podpivkovichi/app.env
+ExecStart=/opt/podpivkovichi/runtime/node/bin/node server/index.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+StateDirectory=podpivkovichi
+UMask=0077
+CPUQuota=40%
+MemoryMax=384M
+TasksMax=64
+LimitNOFILE=8192
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/podpivkovichi
+
+[Install]
+WantedBy=multi-user.target
