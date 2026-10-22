@@ -3,10 +3,11 @@ import { Maximize2, Minimize2, MonitorUp } from 'lucide-react';
 import { useElementFullscreen } from './useElementFullscreen';
 import './screen-share.css';
 
-export default function ScreenShareFrame({ username, children, onError }: {
+export default function ScreenShareFrame({ username, children, onError, fullscreenControls }: {
   username: string;
   children: ReactNode;
   onError: (message: string) => void;
+  fullscreenControls?: ReactNode;
 }) {
   const { elementRef, fullscreen, toggle } = useElementFullscreen<HTMLDivElement>(onError);
   return <div ref={elementRef} className="share-stage" onDoubleClick={event => { if (event.target instanceof HTMLVideoElement) toggle(); }}>
@@ -15,6 +16,7 @@ export default function ScreenShareFrame({ username, children, onError }: {
         {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
     </div>
+    {fullscreen && fullscreenControls && <div className="fullscreen-share-switcher">{fullscreenControls}</div>}
     {children}
   </div>;
 }
