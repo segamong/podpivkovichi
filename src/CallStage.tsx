@@ -1,12 +1,14 @@
 import { AudioSettingsInline } from './AudioSettings';
 import { applyMicrophoneProcessing } from './microphoneProcessor';
 import { loadAudioPreferences, audioCapture, type AudioPreferences } from './audioPreferences';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { api } from './api';
 import { Room, RoomEvent, ConnectionState, DisconnectReason, Track, LocalVideoTrack, LocalAudioTrack, RemoteAudioTrack, VideoPresets, VideoQuality, BackupCodecPolicy, type LocalTrackPublication, type Participant, type RemoteParticipant, type TrackPublishOptions } from 'livekit-client';
 import { Headphones, HeadphoneOff, Mic, MicOff, Video, VideoOff, MonitorUp, MonitorOff, PhoneOff, Settings2, Volume2, VolumeX, Radio, ChevronDown, Maximize2, Minimize2, LoaderCircle, RefreshCw } from 'lucide-react';
 import './camera-fullscreen.css';
 import ScreenShareFrame from './ScreenShareFrame';
+import CallSettingsDrawer from './CallSettingsDrawer';
+import CallMediaLayout from './CallMediaLayout';
 import { toggleElementFullscreen } from './fullscreen';
 import { filterScreenAudio, screenAudioCaptureOptions } from './screenAudio';
 import { availableScreenCodecs, chooseScreenCodec, type ScreenCodecChoice } from './screenCodecs';
@@ -236,6 +238,9 @@ export default function CallStage({ channel, user, onLeave, onError, initialPref
   deafenedRef.current = deafened;
   const [audioBlocked, setAudioBlocked] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsId = useId();
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
   const [audio, setAudio] = useState<AudioPreferences>(loadAudioPreferences);
   const audioRef = useRef(audio);
   audioRef.current = audio;
@@ -698,6 +703,7 @@ export default function CallStage({ channel, user, onLeave, onError, initialPref
   const sharing = room?.localParticipant.isScreenShareEnabled ?? false;
   const remote = participants.filter((participant): participant is RemoteParticipant => !participant.isLocal);
   const statusLabel = connected ? 'Вы в голосовом канале' : state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting ? 'Восстанавливаем связь…' : connectionError ? 'Нет соединения' : 'Подключаемся…';
+  const screenSwitcher = <div className="share-switcher" role="group" aria-label="Переключить демонстрацию экрана">{shares.map(participant => <button type="button" key={participant.identity} className={participant === shareParticipant ? 'active' : ''} aria-label={`Смотреть экран ${usernameFor(participant)}`} aria-pressed={participant === shareParticipant} onClick={() => focusShare(participant.identity)}><MonitorUp size={14}/><span>{usernameFor(participant)}</span></button>)}</div>;
 
   return <section className={`call-stage${shareParticipant ? ' has-share' : ''}`} aria-label={`Голосовой канал ${channel.name}`}>
     <div className="call-heading"><div><span className={`call-connection${connected ? ' connected' : ''}`}><Radio size={14} />{statusLabel}</span><h2>{channel.name}</h2></div>
@@ -710,15 +716,15 @@ export default function CallStage({ channel, user, onLeave, onError, initialPref
     {room && <>
       {audioBlocked && !deafened && <div className="audio-unlock" role="status"><Volume2 size={18} /><span>Браузер ожидает разрешения на воспроизведение звука.</span><button onClick={() => act('audio', async current => { await current.startAudio(); if (roomRef.current === current) setAudioBlocked(!current.canPlaybackAudio); })}>Включить звук</button></div>}
       <div className="remote-audio" aria-hidden="true">{remote.flatMap(participant => [...participant.audioTrackPublications.values()].map(publication => publication.audioTrack instanceof RemoteAudioTrack && (publication.source !== Track.Source.ScreenShareAudio || participant.identity === shareParticipant?.identity) ? <RemoteAudio key={publication.trackSid} track={publication.audioTrack} deafened={deafened} volume={volumes[participant.identity] ?? 100} onBlocked={markAudioBlocked} /> : null))}</div>
-      {shareParticipant && <ScreenShareFrame username={usernameFor(shareParticipant)} onError={message => callbacks.current.onError(message)}>
+      <CallMediaLayout screen={shareParticipant ? <ScreenShareFrame username={usernameFor(shareParticipant)} fullscreenControls={screenSwitcher} onError={message => callbacks.current.onError(message)}>
         <div className="share-video-wrap">{shareTrack ? <MediaVideo track={shareTrack} local={shareParticipant.isLocal} screen /> : <div className="share-loading"><LoaderCircle className="spin" size={24} /><span>Подключаем выбранную демонстрацию…</span></div>}</div>
-        {shares.length > 1 && <div className="share-switcher">{shares.map(participant => <button key={participant.identity} className={participant === shareParticipant ? 'active' : ''} aria-pressed={participant === shareParticipant} onClick={() => focusShare(participant.identity)}>{usernameFor(participant)}</button>)}</div>}
-      </ScreenShareFrame>}
-      <div className={`participant-grid${shareParticipant ? ' thumbnails' : ''}`}>{participants.map(participant => <ParticipantTile key={participant.identity} participant={participant} username={usernameFor(participant)} local={participant.isLocal} compact={!!shareParticipant} volume={volumes[participant.identity] ?? 100} onVolume={value => setVolumes(previous => ({ ...previous, [participant.identity]: value }))} onError={message => callbacks.current.onError(message)} />)}</div>
+      </ScreenShareFrame> : undefined} screenSwitcher={screenSwitcher}
+        participants={participants.map(participant => <ParticipantTile key={participant.identity} participant={participant} username={usernameFor(participant)} local={participant.isLocal} compact={!!shareParticipant} volume={volumes[participant.identity] ?? 100} onVolume={value => setVolumes(previous => ({ ...previous, [participant.identity]: value }))} onError={message => callbacks.current.onError(message)} />)}/>
       {participants.length === 1 && !shareParticipant && <div className="call-alone"><span>Здесь пока тихо</span><p>Вы уже в канале. Пригласите друзей и начните разговор.</p></div>}
     </>}
 
-    {settingsOpen && <div className="call-settings"><div className="settings-heading"><h3>Голос и видео</h3><button className="text-button" onClick={() => void listDevices()}><RefreshCw size={14} />Обновить устройства</button></div>
+    <CallSettingsDrawer id={settingsId} open={settingsOpen} triggerRef={settingsTriggerRef} onClose={closeSettings}
+      actions={<button className="text-button" onClick={() => void listDevices()}><RefreshCw size={14} />Обновить устройства</button>}>
       <div className="device-grid">{(['audioinput', 'audiooutput', 'videoinput'] as const).map(kind => <label key={kind}>{kind === 'audioinput' ? 'Микрофон' : kind === 'audiooutput' ? 'Наушники / динамики' : 'Камера'}<select value={deviceSelection[kind]} disabled={!connected || !!busy || (kind === 'audiooutput' && !('setSinkId' in HTMLMediaElement.prototype))} onChange={event => changeDevice(kind, event.target.value)}><option value="default">По умолчанию</option>{devices.filter(device => device.kind === kind && device.deviceId !== 'default' && device.deviceId !== '').map((device, index) => <option key={device.deviceId} value={device.deviceId}>{device.label || `${kind === 'videoinput' ? 'Камера' : 'Устройство'} ${index + 1}`}</option>)}</select></label>)}</div>
       <AudioSettingsInline />
       <p className="settings-hint">Названия устройств появятся после разрешения браузера. Выбор динамиков доступен в поддерживаемых браузерах.</p>
@@ -734,7 +740,7 @@ export default function CallStage({ channel, user, onLeave, onError, initialPref
       <p className="settings-hint">Для звука включите его передачу в окне выбора экрана или вкладки браузера.</p>
       {window.signalDesktop && desktopScreenAudio === 'unavailable' && <p className="settings-hint">Эта версия Windows не поддерживает захват системного звука с исключением голосов звонка. Для передачи звука отдельной вкладки откройте Подпивковичи в браузере.</p>}
       <p className="settings-hint">«Авто» учитывает оценку кодирования браузером. При нехватке процессора или полосы частота кадров может падать. Получаем только видео и звук выбранной демонстрации.</p>
-    </div>}
+    </CallSettingsDrawer>
 
     <div className="call-toolbar"><div className="toolbar-main">
       <button className={`call-control${microphoneOn ? '' : ' off'}`} disabled={!connected || !!busy} onClick={toggleMicrophone} title={microphoneOn ? 'Выключить микрофон' : 'Включить микрофон'} aria-label={microphoneOn ? 'Выключить микрофон' : 'Включить микрофон'} aria-pressed={microphoneOn}>{busy === 'microphone' ? <LoaderCircle className="spin" size={21} /> : microphoneOn ? <Mic size={21} /> : <MicOff size={21} />}<span>Микрофон</span></button>
@@ -742,7 +748,7 @@ export default function CallStage({ channel, user, onLeave, onError, initialPref
       <span className="toolbar-divider" />
       <button className={`call-control${cameraOn ? ' active' : ''}`} disabled={!connected || !!busy} onClick={toggleCamera} aria-label={cameraOn ? 'Выключить камеру' : 'Включить камеру'} aria-pressed={cameraOn}>{busy === 'camera' ? <LoaderCircle className="spin" size={21} /> : cameraOn ? <Video size={21} /> : <VideoOff size={21} />}<span>Камера</span></button>
       <button className={`call-control${sharing ? ' active' : ''}`} disabled={!connected || !!busy} onClick={toggleScreen} title={sharing ? 'Остановить трансляцию экрана' : `Трансляция экрана: ${SCREEN_PROFILES[screenProfile].label}, ${screenBitrate / 1_000_000} Мбит/с`} aria-label={sharing ? 'Остановить трансляцию экрана' : 'Начать трансляцию экрана'} aria-pressed={sharing}>{busy === 'screen' ? <LoaderCircle className="spin" size={21} /> : sharing ? <MonitorOff size={21} /> : <MonitorUp size={21} />}<span>Трансляция экрана</span></button>
-      <button className={`call-control${settingsOpen ? ' active' : ''}`} onClick={() => { setSettingsOpen(value => !value); if (!settingsOpen) void listDevices(); }} aria-label="Настройки звука и видео" aria-expanded={settingsOpen}><Settings2 size={21} /><span>Настройки <ChevronDown size={12} /></span></button>
+      <button ref={settingsTriggerRef} className={`call-control${settingsOpen ? ' active' : ''}`} onClick={() => { setSettingsOpen(value => !value); if (!settingsOpen) void listDevices(); }} aria-label="Настройки звука и видео" aria-expanded={settingsOpen} aria-controls={settingsId}><Settings2 size={21} /><span>Настройки <ChevronDown size={12} /></span></button>
       <span className="toolbar-divider" />
       <button className="call-control leave-call" onClick={leave} aria-label="Выйти из голосового канала"><PhoneOff size={21} /><span>Выйти</span></button>
     </div><span className="toolbar-note"><span className="status-dot" />{connected ? 'WebRTC · защищённое соединение' : 'Ожидание подключения'}</span></div>
