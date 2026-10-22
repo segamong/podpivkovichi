@@ -1,0 +1,168 @@
+/* Media settings float over the call instead of reducing the video area. */
+.call-settings.call-settings-drawer {
+  position: fixed;
+  z-index: 55;
+  top: clamp(58px, 7vh, 80px);
+  right: 18px;
+  bottom: 18px;
+  left: auto;
+  width: min(420px, calc(100vw - 36px));
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #454750;
+  border-radius: 12px;
+  background: #2b2d31;
+  color: #dbdee1;
+  box-shadow: 0 18px 55px #0008;
+  transform: translateX(calc(100% + 24px));
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 220ms ease, visibility 0s 220ms;
+}
+.call-settings.call-settings-drawer.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform 220ms ease, visibility 0s;
+}
+.call-settings-drawer-heading {
+  min-height: 54px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #3f4147;
+}
+.call-settings-drawer-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 15px;
+  color: #f2f3f5;
+}
+.call-settings-drawer-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #1e1f22 #2b2d31;
+  padding: 16px;
+}
+.call-settings-drawer-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.call-settings-drawer .device-grid,
+.call-settings-drawer .share-settings { grid-template-columns: 1fr; }
+.call-settings-drawer label { margin: 8px 0 14px; font-size: 12px; color: #b5bac1; }
+.call-settings-drawer select { width: 100%; font-size: 12px; padding: 10px; background: #1e1f22; }
+.call-settings-drawer p { font-size: 11px; line-height: 1.6; color: #949ba4; }
+.call-settings-drawer .audio-preferences { margin: 12px 0 18px; padding-top: 16px; }
+.call-settings-drawer .checkbox-label { padding-top: 0; }
+
+/* Keep participants in a dedicated right rail with their own scroll area. */
+.call-stage.has-share .call-media-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(168px, 20vw, 220px);
+  gap: 14px;
+  height: clamp(230px, 42dvh, 520px);
+  min-height: 0;
+  min-width: 0;
+}
+.call-screen-main { min-width: 0; min-height: 0; }
+.call-screen-main .share-stage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+}
+.call-screen-main .share-title { flex-shrink: 0; min-width: 0; margin: 0 0 8px; }
+.call-screen-main .share-title > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.call-screen-main .share-video-wrap {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  width: 100%;
+}
+.call-screen-rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+  gap: 10px;
+  border-radius: 10px;
+  background: #1e1f22;
+}
+.call-screen-rail .share-switcher {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 0 1 auto;
+  min-height: 30px;
+  max-height: 38%;
+  overflow-y: auto;
+  gap: 6px;
+  margin: 0;
+  scrollbar-width: thin;
+}
+.call-screen-rail .share-switcher button,
+.fullscreen-share-switcher .share-switcher button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: #313338;
+  color: #b5bac1;
+  text-align: left;
+  font-size: 11px;
+}
+.share-switcher button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.call-screen-rail .share-switcher button:hover { background: #404249; color: #f2f3f5; }
+.call-screen-rail .share-switcher button.active,
+.fullscreen-share-switcher .share-switcher button.active { background: #5865f233; border-color: #5865f2; color: #f2f3f5; }
+.call-screen-rail .participant-grid.thumbnails {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 90px;
+  overflow-y: auto;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #404249 transparent;
+}
+.call-screen-rail .participant-tile.compact {
+  height: auto;
+  min-height: 100px;
+  aspect-ratio: 16 / 10;
+  flex: 0 0 auto;
+}
+.call-screen-rail .participant-tile.compact .participant-avatar { border-radius: 50%; }
+.call-screen-main .share-stage:fullscreen { height: 100dvh; padding: 16px; box-sizing: border-box; }
+.fullscreen-share-switcher { flex-shrink: 0; }
+.fullscreen-share-switcher .share-switcher { flex-wrap: wrap; margin: 0; }
+
+@media (max-width: 650px) {
+  .call-settings.call-settings-drawer { top: 12px; bottom: 12px; right: 8px; width: calc(100vw - 16px); }
+  .call-stage.has-share .call-media-layout { grid-template-columns: minmax(0, 1fr) 112px; gap: 8px; height: clamp(230px, 40dvh, 360px); }
+  .call-screen-rail { padding: 6px; gap: 8px; }
+  .call-screen-rail .participant-grid.thumbnails { gap: 8px; }
+  .call-screen-rail .participant-tile.compact { min-height: 70px; }
+  .call-screen-rail .share-switcher button { font-size: 10px; padding: 7px 5px; gap: 4px; }
+  .call-screen-rail .share-switcher svg { width: 12px; height: 12px; }
+  .call-screen-rail .participant-caption { font-size: 10px; left: 5px; right: 5px; bottom: 5px; }
+  .call-screen-main .share-title { font-size: 10px; }
+  .call-screen-main .share-title small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .call-settings.call-settings-drawer { transition: none; }
+}
